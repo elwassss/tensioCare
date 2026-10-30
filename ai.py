@@ -106,6 +106,9 @@ class MeasurementReminder(Base):
 
 Base.metadata.create_all(engine)
 def utcnow() -> datetime: return datetime.now(timezone.utc)
+def to_utc(dt: Optional[datetime]) -> Optional[datetime]:
+    if dt is None: return None
+    return dt.replace(tzinfo=timezone.utc) if dt.tzinfo is None else dt.astimezone(timezone.utc)
 def get_db() -> Session:
     db = SessionLocal()
     try: yield db
@@ -166,15 +169,15 @@ class AdvisoryService:
     def trend(self, db: Session, patient_id: str) -> Dict[str, Any]:
         rows = self.history(db, patient_id, 30); periods: Dict[str, Any] = {}
         for days in (7,14,30):
-            part = [r for r in rows if r.measured_at >= utcnow()-timedelta(days=days)]
+            part = [r for r in rows if to_utc(r.measured_at) >= utcnow()-timedelta(days=days)]
             ss = [r.systolic for r in part]; dd = [r.diastolic for r in part]
             periods[str(days)] = {"reading_count": len(part), "systolic_average": round(mean(ss),1) if ss else None,
                 "diastolic_average": round(mean(dd),1) if dd else None, "systolic_slope": round(line_slope(ss),2),
                 "diastolic_slope": round(line_slope(dd),2), "systolic_variability": round(pstdev(ss),1) if len(ss)>1 else 0,
                 "diastolic_variability": round(pstdev(dd),1) if len(dd)>1 else 0}
         signals: List[str] = []
-        ss7 = [r.systolic for r in rows if r.measured_at >= utcnow()-timedelta(days=7)]
-        ss14 = [r.systolic for r in rows if r.measured_at >= utcnow()-timedelta(days=14)]
+        ss7 = [r.systolic for r in rows if to_utc(r.measured_at) >= utcnow()-timedelta(days=7)]
+        ss14 = [r.systolic for r in rows if to_utc(r.measured_at) >= utcnow()-timedelta(days=14)]
         if line_slope(ss7)>1.5: signals.append("Systolic pressure is rising this week")
         if line_slope(ss14)>1.5: signals.append("Systolic pressure is deteriorating this month")
         elif line_slope(ss14)<-1.5: signals.append("Systolic pressure is improving this month")
