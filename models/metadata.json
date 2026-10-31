@@ -1,0 +1,18 @@
+{
+  "model_version": "rules-v1.0",
+  "trained_at": "2026-10-30T11:11:29.984797+00:00",
+  "features": [
+    "systolic",
+    "diastolic",
+    "pulse",
+    "recent_high_count",
+    "trend",
+    "variability",
+    "symptoms",
+    "age",
+    "missed_measurements"
+  ],
+  "training_rows": 1,
+  "patient_count": 2,
+  "engine": "transparent-rule-fallback"
+}

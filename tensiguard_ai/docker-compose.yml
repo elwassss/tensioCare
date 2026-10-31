@@ -1,0 +1,22 @@
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: tensiguard_ai/Dockerfile
+    working_dir: /app
+    ports: ["8000:8000"]
+    environment:
+      DATABASE_URL: postgresql+psycopg://tensiguard:tensiguard@db:5432/tensiguard
+      CORS_ORIGINS: http://localhost:5173
+    depends_on:
+      db: {condition: service_healthy}
+    volumes:
+      - ./ai.py:/app/ai.py:ro
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: tensiguard
+      POSTGRES_USER: tensiguard
+      POSTGRES_PASSWORD: tensiguard
+    ports: ["5432:5432"]
+    healthcheck: {test: ["CMD-SHELL", "pg_isready -U tensiguard"], interval: 5s, timeout: 5s, retries: 10}
